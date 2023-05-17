@@ -5,4 +5,3 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade -r requirements.txt && apt-get update && apt-get install -y iputils-ping
 COPY . .
 CMD ["flask", "run", "--host", "0.0.0.0"]
-#CMD ["gunicorn", "--bind", "0.0.0.0:80", "app:create_app()"]
