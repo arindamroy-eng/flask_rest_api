@@ -4,7 +4,7 @@ from flask_jwt_extended import JWTManager
 import secrets
 import os
 from db import db
-import models
+from blocklist import BLOCKLIST
 
 from resources.item import blp as ItemsBlueprint
 from resources.store import blp as StoreBlueprint
@@ -34,6 +34,19 @@ def create_app(db_url=None):
 
     jwt = JWTManager(app)
 
+    @jwt.token_in_blocklist_loader
+    def check_if_token_in_blocklist(jwt_header, jwt_payload):
+        return jwt_payload["jti"] in BLOCKLIST
+
+    @jwt.revoked_token_loader
+    def revoked_token_callback(jwt_header, jwt_payload):
+        return (
+            jsonify (
+                {"message":"The token has been revoked.", "error":"token_revoked"}
+            ),
+            401,
+        )
+
     @jwt.expired_token_loader
     def expired_token_callback(jwt_header, jwt_payload):
         return (
@@ -56,14 +69,14 @@ def create_app(db_url=None):
     def missing_token_callback(error):
         return (
             jsonify (
-                {"description":"Request does not contain an access token.",
+                {"description1":"Request does not contain an access token.",
                  "error":"authorization_required"}
             ),
             401,
         )
 
-    @app.before_first_request
-    def create_tables():
+    with app.app_context():
+        import models
         db.create_all()
 
     api.register_blueprint (ItemsBlueprint)

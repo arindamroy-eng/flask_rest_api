@@ -9,7 +9,7 @@ from schemas import TagSchema, TagAndItemSchema
 
 blp = Blueprint("Tags", "tags", description="Operations on tags")
 
-@blp.route("/store/<int:store_id>/tag")
+@blp.route("/store/<string:store_id>/tag")
 class TagsInStore(MethodView):
 
     @blp.response(200, TagSchema(many=True))
@@ -21,8 +21,10 @@ class TagsInStore(MethodView):
     @blp.arguments(TagSchema)
     @blp.response(201, TagSchema)
     def post(self, tag_data, store_id):
-        tag = TagModel(**tag_data, store_id=store_id)
+        if TagModel.query.filter(TagModel.store_id == store_id, TagModel.name == tag_data["name"]).first():
+            abort (400, message="A tag with the same name already exists in that store")
 
+        tag = TagModel(**tag_data, store_id=store_id)
         try:
             db.session.add(tag)
             db.session.commit()
@@ -33,7 +35,7 @@ class TagsInStore(MethodView):
         
         return tag
 
-@blp.route("/item/<int:item_id>/tag/<int:tag_id>")
+@blp.route("/item/<string:item_id>/tag/<string:tag_id>")
 class LinkTagsToItem(MethodView):
     @blp.response(201, TagSchema)
     def post(self, item_id, tag_id):
@@ -75,7 +77,7 @@ class LinkTagsToItem(MethodView):
 
 
 
-@blp.route("/tag/<int:tag_id>")
+@blp.route("/tag/<string:tag_id>")
 class Tag(MethodView):
     @blp.response(200, TagSchema)
     def get(self, tag_id):
@@ -87,7 +89,6 @@ class Tag(MethodView):
     )
     @blp.alt_response(404, description="Tag not found")
     @blp.alt_response(400, description="Tag assigned to one or more items.")
-
     def delete(self, tag_id):
         tag = TagModel.query.get_or_404(tag_id)
 
