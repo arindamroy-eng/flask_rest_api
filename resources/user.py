@@ -11,6 +11,7 @@ from flask_jwt_extended import (
 )
 
 from db import db
+from blocklist import BLOCKLIST
 
 from models import UserModel
 from schemas import UserSchema
@@ -18,9 +19,10 @@ from schemas import UserSchema
 
 blp = Blueprint("Users", "users", description="Operations on users")
 
-@blp.route("/user/<int:user_id>")
-class Store(MethodView):
+@blp.route("/user/<string:user_id>")
+class User(MethodView):
     @blp.response(200, UserSchema)
+    @jwt_required()
     def get(cls, user_id):
         user = UserModel.query.get_or_404(user_id)
         return user
@@ -32,7 +34,7 @@ class Store(MethodView):
         return {"message":"User deleted"}
 
 @blp.route("/register")
-class StoreList(MethodView):
+class UserList(MethodView):
     @blp.arguments(UserSchema)
     @blp.response(201, UserSchema)
     def post(cls, user_data):
@@ -63,3 +65,21 @@ class UserLogin(MethodView):
             return {"access_token": access_token, "refresh_token":refresh_token}, 200
         
         abort(401, message="Invalid credentials")
+
+@blp.route("/logout")
+class UserLogout(MethodView):
+    @jwt_required()
+    def post(self):
+        jti = get_jwt()["jti"]
+        BLOCKLIST.add(jti)
+        return {"message": "Succeffully logged out"}
+
+@blp.route("/refresh")
+class TokenRefresh(MethodView):
+    @jwt_required(refresh=True)
+    def post(self):
+        current_user = get_jwt_identity()
+        new_token = create_access_token(identity=current_user, fresh=False)
+        jti = get_jwt()["jti"]
+        BLOCKLIST.add(jti)
+        return {"access_token":new_token}, 200
