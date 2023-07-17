@@ -4,4 +4,4 @@ WORKDIR /rest_api_ex
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade -r requirements.txt && apt-get update && apt-get install -y iputils-ping
 COPY . .
-CMD ["flask", "run", "--host", "0.0.0.0"]
+CMD ["/bin/sh", "docker-entrypoint.sh"]

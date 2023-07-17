@@ -5,6 +5,8 @@ import secrets
 import os
 from db import db
 from blocklist import BLOCKLIST
+from flask_migrate import Migrate
+from dotenv import load_dotenv
 
 from resources.item import blp as ItemsBlueprint
 from resources.store import blp as StoreBlueprint
@@ -13,6 +15,7 @@ from resources.user import blp as UserBlueprint
 
 def create_app(db_url=None):
     app = Flask(__name__)
+    load_dotenv()
 
     app.config["PROPAGATE_EXCEPTIONS"] = True
     app.config["API_TITLE"] = "Stores REST API"
@@ -25,6 +28,7 @@ def create_app(db_url=None):
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     db.init_app(app)
+    migrate = Migrate(app, db)
 
     api = Api(app)
 
@@ -75,9 +79,10 @@ def create_app(db_url=None):
             401,
         )
 
-    with app.app_context():
-        import models
-        db.create_all()
+    # As we are using Migrate, no need to use these
+    #with app.app_context():
+    #    import models
+    #    db.create_all()
 
     api.register_blueprint (ItemsBlueprint)
     api.register_blueprint (StoreBlueprint)
