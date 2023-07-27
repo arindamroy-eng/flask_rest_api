@@ -32,7 +32,7 @@ class StoreSchema(PlainStoreSchema):
 
 class TagSchema(PlainTagSchema):
     store_id = fields.Int(load_only=True)
-    store = fields.Nested(PlainItemSchema(), dump_only=True)
+    store = fields.Nested(PlainStoreSchema(), dump_only=True)
     items = fields.List(fields.Nested(PlainItemSchema(), dump_only=True))
 
 class TagAndItemSchema(Schema):
